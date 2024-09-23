@@ -1,5 +1,6 @@
 const {createProductSchema} = require("../validators/product");
 const cloudinary = require("../config/cloudinary");
+const prisma = require("../config/prisma");
 exports.adminCreateProduct = async(req, res, next) => {
     try {
         console.log(req.body)
@@ -11,6 +12,18 @@ exports.adminCreateProduct = async(req, res, next) => {
             imagePromiseArray.push(promiseUrl);
         }
         const imageArray = await Promise.all(imagePromiseArray);
+        const newProduct = await prisma.product.create({
+            data: {
+                ...data,
+                productImages: {
+                    createMany: {
+                        data: imageArray.map((el)=> ({url: el.secure_url}))
+                    }
+                }
+            },include: {
+                productImages: true
+            }
+        })
         res.json({ message: "create product success" });
     } catch (error) {
         next(error);
