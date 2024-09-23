@@ -1,6 +1,7 @@
 const {createProductSchema} = require("../validators/product");
 const cloudinary = require("../config/cloudinary");
 const prisma = require("../config/prisma");
+const fs = require("fs/promises");
 exports.adminCreateProduct = async(req, res, next) => {
     try {
         console.log(req.body)
@@ -27,7 +28,9 @@ exports.adminCreateProduct = async(req, res, next) => {
         res.json({ message: "create product success" });
     } catch (error) {
         next(error);
-    }
+    } finally {
+     const deleteFiles =  req.files.map(file => fs.unlink(file.path));
+     await Promise.all(deleteFiles);
 }
 exports.adminUpdateProduct = (req, res, next) => {
     try {
