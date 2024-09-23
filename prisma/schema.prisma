@@ -1,0 +1,117 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        Int       @id @default(autoincrement())
+  firstName String?   @map("first_name")
+  lastName  String?   @map("last_name")
+  email     String    @unique
+  password  String
+  phone     String?
+  memberId  String    @map("member_id")
+  role      Role      @default(USER)
+  addresses Address[]
+  orders    Order[]
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+model Address {
+  id          Int     @id @default(autoincrement())
+  userId      Int
+  name        String
+  phone       String
+  email       String?
+  address     String
+  subDistrict String  @map("sub_district")
+  district    String
+  province    String
+  postalCode  String
+  isMain      Boolean @map("is_main")
+  user        User    @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+}
+
+model Order {
+  id            Int             @id @default(autoincrement())
+  total         Decimal         @db.Decimal(9, 2)
+  isPaid        Boolean         @default(false) @map("is_paid")
+  createdAt     DateTime        @default(now()) @map("created_at")
+  updatedAt     DateTime        @updatedAt @map("updated_at")
+  status        Status          @default(CART)
+  paymentMethod Payment         @map("payment_method")
+  userId        Int
+  user          User            @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  orderProducts Order_Product[]
+}
+
+enum Status {
+  CART
+  PENDING
+  PACKING
+  DELIVERING
+  DELIVERED
+  CANCELLED
+}
+
+enum Payment {
+  CARD
+  PROMPTPAY
+}
+
+model Order_Product {
+  quantity  Int
+  orderId   Int
+  productId Int
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@id([orderId, productId])
+  @@map("order_product")
+}
+
+model Product {
+  id            Int             @id @default(autoincrement())
+  name          String
+  price         Decimal         @db.Decimal(9, 2)
+  stock         Int             @default(0)
+  detail        String
+  length        Int?
+  width         Int?
+  height        Int?
+  weight        Int?
+  createdAt     DateTime        @default(now()) @map("created_at")
+  updatedAt     DateTime        @updatedAt @map("updated_at")
+  orderProducts Order_Product[]
+  category      Category        @relation(fields: [categoryId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  categoryId    Int
+  productImages Product_Image[]
+}
+
+model Product_Image {
+  id        Int     @id @default(autoincrement())
+  url       String
+  productId Int
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  @@map("product_image")
+}
+
+model Category {
+  id      Int       @id @default(autoincrement())
+  name    String
+  Product Product[]
+}
